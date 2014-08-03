@@ -1,5 +1,5 @@
 UkStemmer = function() {
 	this.rules = [
-		{type: "TrimEnding", value: "а"}
+		{type: "TrimEnd", value: "а"}
 	];	
 };
