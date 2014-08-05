@@ -1,8 +1,19 @@
+// Change log
+// 05.08.2014 - 1988/2116, accuracy 93.95%
+
 // Constants
 var TRIM_END_TYPE = "TrimEnd";
+var PERM_END_TYPE = "PermEnd";
+
+var TYPES_PRIORITY = {};
+TYPES_PRIORITY[TRIM_END_TYPE] = 1;
+TYPES_PRIORITY[PERM_END_TYPE] = 2;
+
 
 UkStemmer = function() {
-	var rules = new Array();
+	var rules = [
+		{type: PERM_END_TYPE, value: "ер"}
+	];
 	this.rules = rules;
 	// append trim endings	
 	var spaceSeparatedTrimEnds = ""
@@ -26,11 +37,18 @@ UkStemmer = function() {
 	spaceSeparatedTrimEnds.split(/\s+/).forEach(function(e) {
 		rules.push({type: TRIM_END_TYPE, value: e});
 	});
+	rules.push({type: PERM_END_TYPE, value: "ск"});
 	console.log(rules.length);
 
 	// do correct rule order
 	rules.sort(function(a, b) {
-		if ( a.type == TRIM_END_TYPE && b.type == TRIM_END_TYPE ) {
+		if ( a.type != b.type ) {
+			var aPrior = TYPES_PRIORITY[a.type];
+			var bPrior = TYPES_PRIORITY[b.type];
+			if ( aPrior < bPrior ) return 1;
+			else if ( aPrior > bPrior ) return -1;
+		} else {
+			// equal types (default by length of value)
 			if ( a.value.length < b.value.length ) return 1;
 			else if ( a.value.length > b.value.length ) return -1;
 		}
@@ -45,15 +63,24 @@ UkStemmer = function() {
 UkStemmer.prototype.stemm = function(word) {
 	// TODO normalize word (to lower-case, change stressed vowels)
 
+	var stemForm = word;
 	this.rules.some(function(rule) {
 		if ( rule.type == TRIM_END_TYPE ) {
 			var re = new RegExp(rule.value + "$");
 			if ( word.match(re) ) {
-				console.log(word + " -> " + word.substring(0, word.length-rule.value.length));
+				stemForm = word.substring(0, word.length-rule.value.length);
+				//console.log(word + " -> " + stemForm);
+				return true;
+			}
+		} else if ( rule.type == PERM_END_TYPE ) {
+			var re = new RegExp(rule.value + "$");
+			if ( word.match(re) ) {
+				stemForm = word;
 				return true;
 			}
 		} else {
-			throw new Exception("Unsupported type of rule: " + rule.type);
+			throw "Unsupported type of rule: " + rule.type;
 		}
 	});
+	return stemForm;
 };
